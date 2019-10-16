@@ -98,11 +98,19 @@ public class AccountReplica {
 	}
 	
 	public void getQuickBalance() {
-		
+		System.out.println(balance);
 	}
 	
 	public void getSynchedBalance() {
-		
+		String[] order;
+		try {
+			while(connection.poll()) {
+				order = new String(connection.receive().getData()).split("//s+");
+			}
+		}
+		catch() {
+			
+		}
 	}
 	
 	public void deposit(int amount) {
