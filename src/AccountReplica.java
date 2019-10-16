@@ -97,6 +97,31 @@ public class AccountReplica {
 		
 	}
 	
+	public void getQuickBalance() {
+		
+	}
+	
+	public void getSynchedBalance() {
+		
+	}
+	
+	public void deposit(int amount) {
+		
+	}
+	
+	public void getInterest(int interest) {
+		
+	}
+	
+	public void getHistory() {
+		
+	}
+	
+	public void cleanHistory() {
+		
+	}
+	
+	
 	public void sendMessage() {
 		byte[] a = "doot".getBytes();
 		SpreadMessage message = new SpreadMessage();
