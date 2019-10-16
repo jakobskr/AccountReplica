@@ -10,6 +10,7 @@ public class Test {
 			//Commands are written directly to the command line.
 			Scanner scanner = new Scanner(System.in);
 			System.out.println("Waiting for command...");
+			
 			String[] command = scanner.nextLine().split("\\s+");
 			
 			switch(command[0]) {
