@@ -12,9 +12,10 @@ import java.util.Collection;
 import spread.*;
 
 
-public class AccountReplica {
+public class AccountReplica  implements BasicMessageListener {
 	String account_name, server_adress;
 	int number_of_replicas = 0;
+	int group_size = 0;
 	SpreadConnection connection;
 	SpreadGroup group;
 	double balance = 0.0;
@@ -88,10 +89,20 @@ public class AccountReplica {
 			e1.printStackTrace();
 		}
 		
+		ar.connection.add(ar);
 		System.out.println("did it work?");
 		System.out.println(ar);
 		//ar.sendMessage();
-		ar.waitForOthers();
+		//ar.waitForOthers();
+		
+		
+		try {
+			Thread.sleep(300000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		ar.exit();
 		System.out.println("awoo");
 		
@@ -110,8 +121,9 @@ public class AccountReplica {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
+			
 		System.out.println(balance);
+	}
 	}
 	
 	public void deposit(int amount) {
@@ -149,8 +161,6 @@ public class AccountReplica {
 	public SpreadMessage waitForOthers() throws InterruptedIOException, SpreadException {
 		int others = 1;
 		int i = 0;		
-		
-		
 		
 		while ("hei".length() == 3) {
 			System.out.println("waiting for something to happen! i = " + i);
@@ -218,6 +228,7 @@ public class AccountReplica {
 					break;			
 				}			
 			}
+			
 			else {
 				//Commands are retrieved from a file.
 				File file = new File(filename);
@@ -281,6 +292,24 @@ public class AccountReplica {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public void messageReceived(SpreadMessage message) {
+		if (message.isRegular()) {
+			
+		}
+		
+		else if (message.isMembership()) {
+			MembershipInfo info = message.getMembershipInfo();
+			
+			if (info.isCausedByJoin()) {
+				
+			}
+			
+		}
+			
+		
 	}
 	
 }
