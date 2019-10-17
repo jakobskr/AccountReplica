@@ -14,7 +14,7 @@ import spread.*;
 
 public class AccountReplica  implements BasicMessageListener {
 	String account_name, server_adress;
-	int number_of_replicas = 0;
+	volatile int number_of_replicas = 0;
 	int group_size = 0;
 	boolean started;
 	SpreadConnection connection;
@@ -70,7 +70,7 @@ public class AccountReplica  implements BasicMessageListener {
 		
 		AccountReplica ar = new AccountReplica(args[1], args[0], Integer.parseInt(args[2]));
 		
-		id = Long.toString(System.nanoTime());
+		String id = Long.toString(System.nanoTime());
 		id = id.substring( id.length() / 2, id.length() - 1);
 		
 		ar.connection = new SpreadConnection();
@@ -99,6 +99,12 @@ public class AccountReplica  implements BasicMessageListener {
 		System.out.println(ar);
 		//ar.sendMessage();
 		ar.waitForOthers();	
+		try {
+			ar.input_handler();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		System.out.println("we have started");
 		
@@ -191,7 +197,7 @@ public class AccountReplica  implements BasicMessageListener {
 		System.out.println("entering etheral hellscape");
 		
 		while (true) {
-			if(group_size > number_of_replicas) {
+			if(group_size >= number_of_replicas) {
 				System.out.println(group_size + number_of_replicas);
 				break;
 			}
@@ -212,20 +218,21 @@ public class AccountReplica  implements BasicMessageListener {
 				
 				switch(command[0]) {
 				case "getQuickBalance":
-					//TODO: complete this
+					getQuickBalance();
 					break;
 				case "getSyncedBalance":
 					//TODO: complete this
 					break;
 				case "deposit:":
 						int amount = Integer.parseInt(command[1]);
-						//TODO: complete this
+						this.deposit(amount);
 						break;					
 				case "addInterest":
 					int interest = Integer.parseInt(command[1]);
+					this.getInterest(interest);
 					break;
 				case "getHistory":
-					//TODO: complete this.
+					this.getHistory();
 					break;
 				case "checkTxStatus":
 					int transactionID = Integer.parseInt(command[1]);
@@ -235,15 +242,19 @@ public class AccountReplica  implements BasicMessageListener {
 					//TODO: complete this.
 					break;
 				case "memberInfo":
-					//TODO: complete this.
+					getMembers();
 					break;
 				case "sleep":
 					int sleepDuration = Integer.parseInt(command[1]);
 					break;
 				case "exit":
-					//TODO: complete this.
-					break;			
-				}			
+					exit();
+					break;	
+				default:
+					System.out.println("Invalid command");
+					break;
+				}
+				
 			}
 			
 			else {
@@ -315,8 +326,11 @@ public class AccountReplica  implements BasicMessageListener {
 
 	@Override
 	public void messageReceived(SpreadMessage message) {
+		
+		System.out.println("new message");
+		
 		if (message.isRegular()) {
-			
+			System.out.println("message recieved");
 		}
 		
 		else if (message.isMembership()) {
@@ -342,6 +356,8 @@ public class AccountReplica  implements BasicMessageListener {
 				if(group_size >= number_of_replicas) {
 					started = true;
 				}
+				
+				getMembers();
 			}
 			
 			else if (info.isCausedByLeave()) {
@@ -365,7 +381,6 @@ public class AccountReplica  implements BasicMessageListener {
 				System.out.println("unknown service from" + message.getServiceType());
 			}
 			
-			getMembers();
 		}
 			
 		
