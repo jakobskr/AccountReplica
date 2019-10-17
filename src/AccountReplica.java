@@ -115,7 +115,8 @@ public class AccountReplica {
 	}
 	
 	public void deposit(int amount) {
-		
+		Transaction t = new Transaction();
+		t.command="deposit " + ammount;
 	}
 	
 	public void getInterest(int interest) {
