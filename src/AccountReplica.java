@@ -21,7 +21,7 @@ public class AccountReplica  implements BasicMessageListener {
 	SpreadGroup group;
 	ArrayList<SpreadGroup> group_members = new ArrayList<SpreadGroup>();
 	double balance = 0.0;
-	String account_id;
+	static String account_id;
 	ArrayList<Transaction> outstanding_collection; 
 	ArrayList<Transaction> executed_list;
 	
@@ -53,7 +53,6 @@ public class AccountReplica  implements BasicMessageListener {
 		this.account_name = an;
 		this.server_adress = sa;
 		this.number_of_replicas = n;
-		
 		outstanding_collection = new ArrayList<Transaction>(); 
 		executed_list = new ArrayList<Transaction>();
 	}
@@ -70,8 +69,8 @@ public class AccountReplica  implements BasicMessageListener {
 		
 		AccountReplica ar = new AccountReplica(args[1], args[0], Integer.parseInt(args[2]));
 		
-		id = Long.toString(System.nanoTime());
-		id = id.substring( id.length() / 2, id.length() - 1);
+		account_id = Long.toString(System.nanoTime());
+		account_id = id.substring( account_id.length() / 2, account_id.length() - 1);
 		
 		ar.connection = new SpreadConnection();
 		try {
