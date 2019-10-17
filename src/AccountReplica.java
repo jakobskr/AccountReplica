@@ -21,6 +21,7 @@ public class AccountReplica  implements BasicMessageListener {
 	SpreadGroup group;
 	ArrayList<SpreadGroup> group_members = new ArrayList<SpreadGroup>();
 	double balance = 0.0;
+	String account_id;
 	ArrayList<Transaction> outstanding_collection; 
 	ArrayList<Transaction> executed_list;
 	
@@ -52,6 +53,7 @@ public class AccountReplica  implements BasicMessageListener {
 		this.account_name = an;
 		this.server_adress = sa;
 		this.number_of_replicas = n;
+		
 		outstanding_collection = new ArrayList<Transaction>(); 
 		executed_list = new ArrayList<Transaction>();
 	}
@@ -68,7 +70,7 @@ public class AccountReplica  implements BasicMessageListener {
 		
 		AccountReplica ar = new AccountReplica(args[1], args[0], Integer.parseInt(args[2]));
 		
-		String id = Long.toString(System.nanoTime());
+		id = Long.toString(System.nanoTime());
 		id = id.substring( id.length() / 2, id.length() - 1);
 		
 		ar.connection = new SpreadConnection();
@@ -131,19 +133,33 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	public void deposit(int amount) {
-		
+		Transaction t = new Transaction("deposit " + amount, account_id + "-" + order_counter);
+		outstanding_collection.add(t);
+		order_counter++;
+		sendMessage(t.command + " " + t.unique_id);
 	}
 	
 	public void getInterest(int interest) {
-		
+		Transaction t = new Transaction("interest " + interest, account_id + "-" + order_counter);
+		outstanding_collection.add(t);
+		order_counter++;
+		sendMessage(t.command + " " + t.unique_id);
 	}
 	
 	public void getHistory() {
-		
+		System.out.println("executed:");
+		for(Transaction t : executed_list) {
+			System.out.println(t.command);
+		}
+		System.out.println("\noutstanding:");
+		for(Transaction t: outstanding_collection) {
+			System.out.println(t.command);
+		}
 	}
 	
 	public void cleanHistory() {
-		
+		outstanding_collection = new ArrayList<Transaction>(); 
+		executed_list = new ArrayList<Transaction>();
 	}
 	
 	public void getMembers() {
@@ -155,8 +171,8 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	
-	public void sendMessage() {
-		byte[] a = "doot".getBytes();
+	public void sendMessage(String content) {
+		byte[] a = content.getBytes();
 		SpreadMessage message = new SpreadMessage();
 		message.setData(a);
 		message.addGroup(this.account_name);
