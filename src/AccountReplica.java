@@ -97,20 +97,21 @@ public class AccountReplica {
 		
 	}
 	
+	
 	public void getQuickBalance() {
 		System.out.println(balance);
 	}
 	
 	public void getSynchedBalance() {
-		String[] order;
-		try {
-			while(connection.poll()) {
-				order = new String(connection.receive().getData()).split("//s+");
+		while(outstanding_collection.size()>0) {
+			try {
+				wait(1);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
-		catch() {
-			
-		}
+		System.out.println(balance);
 	}
 	
 	public void deposit(int amount) {
