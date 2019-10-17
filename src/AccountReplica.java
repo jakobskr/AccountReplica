@@ -128,7 +128,7 @@ public class AccountReplica  implements BasicMessageListener {
 	public void getSynchedBalance() {
 		while(outstanding_collection.size()>0) {
 			try {
-				wait(1);
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -327,14 +327,20 @@ public class AccountReplica  implements BasicMessageListener {
 				
 		if (message.isRegular()) {
 			System.out.println("message recieved");
-			String[] data = new String(message.getData()).split("//s+");
+			System.out.println(new String (message.getData()));
+			String[] data = new String(message.getData()).split("\\s+");
+			//System.out.println(data[0] + " ugu");
 			switch(data[0]) {
 			case "deposit":
 				balance += Double.parseDouble(data[1]);
+				//System.out.println(balance);
+
 				break;
 			case "interest":
-				balance = balance + balance * Double.parseDouble(data[1]);
-				break;			
+				balance = balance * (1 + Double.parseDouble(data[1]) / 100);
+				break;	
+			default:
+				System.out.println("Unknown command of '" + new String (message.getData())  + "'");
 			}
 			
 		}
