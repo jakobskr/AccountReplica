@@ -133,9 +133,8 @@ public class AccountReplica  implements BasicMessageListener {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+		}
 		System.out.println(balance);
-	}
 	}
 	
 	public void deposit(int amount) {
@@ -331,6 +330,16 @@ public class AccountReplica  implements BasicMessageListener {
 		
 		if (message.isRegular()) {
 			System.out.println("message recieved");
+			String[] data = new String(message.getData()).split("//s+");
+			switch(data[0]) {
+			case "deposit":
+				balance += Double.parseDouble(data[1]);
+				break;
+			case "interest":
+				balance = balance + balance * Double.parseDouble(data[1]);
+				break;			
+			}
+			
 		}
 		
 		else if (message.isMembership()) {
