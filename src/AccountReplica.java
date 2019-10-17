@@ -219,10 +219,10 @@ public class AccountReplica  implements BasicMessageListener {
 				case "getQuickBalance":
 					getQuickBalance();
 					break;
-				case "getSyncedBalance":
-					//TODO: complete this
+				case "getSynchedBalance":
+					this.getSynchedBalance();
 					break;
-				case "deposit:":
+				case "deposit":
 						int amount = Integer.parseInt(command[1]);
 						this.deposit(amount);
 						break;					
@@ -268,7 +268,6 @@ public class AccountReplica  implements BasicMessageListener {
 						//TODO: complete this
 						break;
 					case "getSyncedBalance":
-						//TODO: complete this
 						break;
 					case "deposit:":
 							int amount = Integer.parseInt(command[1]);
@@ -325,9 +324,7 @@ public class AccountReplica  implements BasicMessageListener {
 
 	@Override
 	public void messageReceived(SpreadMessage message) {
-		
-		System.out.println("new message");
-		
+				
 		if (message.isRegular()) {
 			System.out.println("message recieved");
 			String[] data = new String(message.getData()).split("//s+");
