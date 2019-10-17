@@ -16,8 +16,10 @@ public class AccountReplica  implements BasicMessageListener {
 	String account_name, server_adress;
 	int number_of_replicas = 0;
 	int group_size = 0;
+	boolean started;
 	SpreadConnection connection;
 	SpreadGroup group;
+	ArrayList<SpreadGroup> group_members = new ArrayList<SpreadGroup>();
 	double balance = 0.0;
 	ArrayList<Transaction> outstanding_collection; 
 	ArrayList<Transaction> executed_list;
@@ -90,14 +92,16 @@ public class AccountReplica  implements BasicMessageListener {
 		}
 		
 		ar.connection.add(ar);
+		
 		System.out.println("did it work?");
 		System.out.println(ar);
 		//ar.sendMessage();
-		//ar.waitForOthers();
+		ar.waitForOthers();	
 		
+		System.out.println("we have started");
 		
 		try {
-			Thread.sleep(300000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -142,6 +146,14 @@ public class AccountReplica  implements BasicMessageListener {
 		
 	}
 	
+	public void getMembers() {
+		System.out.println("The members of " + account_name + ": " + group_size); 
+		
+		for(SpreadGroup sg: group_members) {
+			System.out.println("\t" + sg);
+		}
+	}
+	
 	
 	public void sendMessage() {
 		byte[] a = "doot".getBytes();
@@ -157,30 +169,20 @@ public class AccountReplica  implements BasicMessageListener {
 		}
 	}
 	
-	public SpreadMessage waitForOthers() throws InterruptedIOException, SpreadException {
+	public void  waitForOthers() {
 		int others = 1;
 		int i = 0;		
+		System.out.println("entering etheral hellscape");
 		
-		while ("hei".length() == 3) {
-			System.out.println("waiting for something to happen! i = " + i);
-			SpreadMessage message= this.connection.receive();
-						
-			if (message.isRegular()) {
-				System.out.println("recieved a regular message");
-				System.out.println(message.getSender());
+		while (true) {
+			if(group_size > number_of_replicas) {
+				System.out.println(group_size + number_of_replicas);
+				break;
 			}
-			
-			else if (message.isMembership()) {
-				System.out.println("recieved memberhship message :) " + message.getMembershipInfo().getMembers().length);
-			}
-			
-			else {
-				System.out.println(message.getMembershipInfo().getGroup());
-			}
-			i++;
 		}
-			
-			return null;
+				
+		System.out.println("i have broken free from this ehteral hellscape");
+		return;
 	}
 	
 	public void input_handler() throws FileNotFoundException {
@@ -278,6 +280,8 @@ public class AccountReplica  implements BasicMessageListener {
 	
 	public void exit() {
 		
+		connection.remove(this);
+		
 		try {
 			group.leave();
 		} catch (SpreadException e) {
@@ -303,9 +307,49 @@ public class AccountReplica  implements BasicMessageListener {
 			MembershipInfo info = message.getMembershipInfo();
 			
 			if (info.isCausedByJoin()) {
+				System.out.println(info.getJoined() + " joined the group");
+				group_members.add(info.getJoined());
+				group_size++;
 				
+				SpreadGroup[] temp = info.getMembers();
+
+				if(group_size < temp.length) {
+					group_size = temp.length;
+					
+					for (SpreadGroup sg: info.getMembers()) {
+						if(! group_members.contains(sg)) {
+							group_members.add(sg);
+						}
+					}	
+				}
+				
+				if(group_size >= number_of_replicas) {
+					started = true;
+				}
 			}
 			
+			else if (info.isCausedByLeave()) {
+				
+				if(info.isSelfLeave()) {
+					return;
+				}
+				
+				System.out.println(info.getLeft() + " left the group");
+				group_members.remove(info.getLeft());
+				group_size--;
+			}
+			
+			else if (info.isCausedByDisconnect()) {
+				System.out.println(info.getDisconnected() + " disconnected");
+				group_members.remove(info.getDisconnected());
+				group_size--;
+			}
+			
+			else {
+				System.out.println("unknown service from" + message.getServiceType());
+			}
+			
+			getMembers();
 		}
 			
 		
