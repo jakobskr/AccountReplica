@@ -143,9 +143,10 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	public void getHistory() {
+		int counter = order_counter - executed_list.size();
 		System.out.println("executed:");
 		for(Transaction t : executed_list) {
-			System.out.println(t.command);
+			System.out.println(counter + " " + t.command);
 		}
 		System.out.println("\noutstanding:");
 		for(Transaction t: outstanding_collection) {
