@@ -332,34 +332,45 @@ public class AccountReplica  implements BasicMessageListener {
 					switch(command[0]) {
 					case "getQuickBalance":
 						//TODO: complete this
+						getQuickBalance(Double.parseDouble(command[1]));
 						break;
 					case "getSyncedBalance":
 						break;
 					case "deposit:":
-							int amount = Integer.parseInt(command[1]);
-							//TODO: complete this
-							break;					
+						deposit(Double.parseDouble(command[1]));
+						//TODO: complete this
+						break;					
 					case "addInterest":
-						int interest = Integer.parseInt(command[1]);
+						addInterest(Double.parseDouble(command[1]));
 						break;
 					case "getHistory":
-						//TODO: complete this.
+						getHistory();
 						break;
 					case "checkTxStatus":
-						int transactionID = Integer.parseInt(command[1]);
-						//TODO: complete this.
+
+						for(Transaction trans: executed_list) {
+							if(trans.unique_id.equalsIgnoreCase(command[1])) {
+								System.out.println("Transaction has been applied");
+							}
+						}
 						break;
 					case "cleanHistory":
-						//TODO: complete this.
+						cleanHistory();
 						break;
 					case "memberInfo":
-						//TODO: complete this.
+						getMembers();
 						break;
 					case "sleep":
 						int sleepDuration = Integer.parseInt(command[1]);
+						try {
+							Thread.sleep(sleepDuration * 1000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 						break;
 					case "exit":
-						//TODO: complete this.
+						exit();
 						break;			
 					}				
 				}		
