@@ -131,16 +131,16 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	public void deposit(Double amount) {
-		Transaction t = new Transaction("deposit " + amount, account_id + "-" + order_counter);
+		Transaction t = new Transaction("deposit " + amount, account_id + "-" + outstanding_counter);
 		outstanding_collection.add(t);
-		order_counter++;
+		outstanding_counter++;
 		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
 	public void addInterest(Double interest) {
-		Transaction t = new Transaction("interest " + interest, account_id + "-" + order_counter);
+		Transaction t = new Transaction("interest " + interest, account_id + "-" + outstanding_counter);
 		outstanding_collection.add(t);
-		order_counter++;
+		this.outstanding_counter++;
 		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
@@ -148,7 +148,8 @@ public class AccountReplica  implements BasicMessageListener {
 		int counter = order_counter - executed_list.size();
 		System.out.println("executed:");
 		for(Transaction t : executed_list) {
-			System.out.println(counter + " " + t.command);
+			System.out.println(counter++ + " " + t.command);
+			
 		}
 		System.out.println("\noutstanding:");
 		for(Transaction t: outstanding_collection) {
@@ -419,7 +420,7 @@ public class AccountReplica  implements BasicMessageListener {
 	
 	
 	/*
-	 * Applies the received interes command from the spread server
+	 * Applies the received interest command from the spread server
 	 */
 	public void handleInterest(String command) {
 		
