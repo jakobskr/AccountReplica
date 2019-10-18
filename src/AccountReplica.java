@@ -30,24 +30,7 @@ public class AccountReplica  implements BasicMessageListener {
 	
 	int order_counter = 0;
 	int outstanding_counter = 0;
-	
-	
-	protected static final int UNRELIABLE_MESS        = 0x00000001;
-	protected static final int RELIABLE_MESS          = 0x00000002;
-	protected static final int FIFO_MESS              = 0x00000004;
-	protected static final int CAUSAL_MESS            = 0x00000008;
-	protected static final int AGREED_MESS            = 0x00000010;
-	protected static final int SAFE_MESS              = 0x00000020;
-	protected static final int REGULAR_MESS           = 0x0000003f;
-	protected static final int SELF_DISCARD           = 0x00000040;
-	protected static final int REG_MEMB_MESS          = 0x00001000;
-	protected static final int TRANSITION_MESS        = 0x00002000;
-	protected static final int CAUSED_BY_JOIN         = 0x00000100;
-	protected static final int CAUSED_BY_LEAVE        = 0x00000200;
-	protected static final int CAUSED_BY_DISCONNECT   = 0x00000400;
-	protected static final int CAUSED_BY_NETWORK      = 0x00000800;
-	protected static final int MEMBERSHIP_MESS        = 0x00003f00;
-	
+
 	public AccountReplica() {
 		
 	}
@@ -70,8 +53,7 @@ public class AccountReplica  implements BasicMessageListener {
 			return;
 		}
 
-		
-		
+	
 		AccountReplica ar = new AccountReplica(args[1], args[0], Integer.parseInt(args[2]));
 		
 
@@ -84,9 +66,11 @@ public class AccountReplica  implements BasicMessageListener {
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(1);
 		} catch (SpreadException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(1);
 		}
 		
 		ar.group = new SpreadGroup();
@@ -96,37 +80,36 @@ public class AccountReplica  implements BasicMessageListener {
 		} catch (SpreadException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			System.exit(1);
 		}
 		
 		ar.connection.add(ar);
-		System.out.println(ar);
-		//ar.sendMessage();
+
 		ar.waitForOthers();	
+		
 		try {
 			ar.input_handler();
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		}
-		
-		
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.exit(1);
 		}
 		
 		ar.exit();
-		System.out.println("awoo");
 		
 	}
 	
-	
+	/*
+	 * prints out the quickBalance no sync guaranteed
+	 */
 	public void getQuickBalance() {
 		System.out.println(balance);
 	}
 	
+	/*
+	 * prints out the balance after our locally invoked commands have been applied. I.E when outstanding_collection size is 0.
+	 * broadcasts the outstanding_collection each 10th second 
+	 */
 	public void getSynchedBalance() {
 		while(outstanding_collection.size()>0) {
 			if(next_broadcast <= System.currentTimeMillis()) {
@@ -145,14 +128,14 @@ public class AccountReplica  implements BasicMessageListener {
 		System.out.println(balance);
 	}
 	
-	public void deposit(int amount) {
+	public void deposit(Double amount) {
 		Transaction t = new Transaction("deposit " + amount, account_id + "-" + order_counter);
 		outstanding_collection.add(t);
 		order_counter++;
 		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
-	public void getInterest(int interest) {
+	public void getInterest(Double interest) {
 		Transaction t = new Transaction("interest " + interest, account_id + "-" + order_counter);
 		outstanding_collection.add(t);
 		order_counter++;
@@ -200,7 +183,7 @@ public class AccountReplica  implements BasicMessageListener {
 	
 	public void waitForOthers() {
 		boolean weAreNumberOne = false;
-		
+		System.out.println("Waiting until " + number_of_replicas + " replicas has joined...");
 		try {
 			Thread.sleep(500);
 		} catch (InterruptedException e) {
@@ -208,23 +191,17 @@ public class AccountReplica  implements BasicMessageListener {
 			e.printStackTrace();
 		}
 		if (group_size == 1) {
-			System.out.println("we are number");
 			weAreNumberOne = true; //hey!
 			started = false;
 			initialized = true;
 		}
 
-		int others = 1;
-		int i = 0;		
-		System.out.println("entering etheral hellscape");
-		
 		while (true) {
 			if(group_size >= number_of_replicas) {
 				break;
 			}
 		}
 				
-		System.out.println("i have broken free from this ehteral hellscape");
 		return;
 	}
 	
@@ -251,6 +228,10 @@ public class AccountReplica  implements BasicMessageListener {
 		
 	}
 	
+	
+	/*
+	 * The main loop of the program, if there is no supplied filename it reads command from the user through the terminal
+	 */
 	public void input_handler() throws FileNotFoundException {
 		next_broadcast = System.currentTimeMillis() + broadcast_delay;
 		String filename = null;
@@ -277,11 +258,11 @@ public class AccountReplica  implements BasicMessageListener {
 					this.getSynchedBalance();
 					break;
 				case "deposit":
-						int amount = Integer.parseInt(command[1]);
+						Double amount = Double.parseDouble(command[1]);
 						this.deposit(amount);
 						break;					
 				case "addInterest":
-					int interest = Integer.parseInt(command[1]);
+					double interest = Double.parseDouble(command[1]);
 					this.getInterest(interest);
 					break;
 				case "getHistory":
@@ -369,6 +350,11 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 
 	
+	
+	/*
+	 * Exits the program after leaving the group and connection.
+	 * graceful exit.
+	 */
 	public void exit() {
 		
 		connection.remove(this);
@@ -386,10 +372,15 @@ public class AccountReplica  implements BasicMessageListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		System.out.println("[EXITING]");
+		System.exit(1);
 	}
 	
+	/*
+	 * Applies the received deposit command from the SPREAD server
+	 */
 	public void handleDeposit(String command) {
-		//System.out.println("uugug " + command);
 		
 		String[] data = command.split("\\s+");
 		Transaction trans = new Transaction(data[0] + " " + data[1], data[2]);
@@ -405,6 +396,9 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	
+	/*
+	 * Applies the received interes command from the spread server
+	 */
 	public void handleInterest(String command) {
 		
 		String[] data = command.split("\\s+");
@@ -421,6 +415,13 @@ public class AccountReplica  implements BasicMessageListener {
 		}
 	}
 
+	
+	/*
+	 * * (non-Javadoc)
+	 * @see spread.BasicMessageListener#messageReceived(spread.SpreadMessage)
+	 * 
+	 * Gets invoke when the connection has a new message, handles both membership messages and regular data messages
+	 */
 	@Override
 	public void messageReceived(SpreadMessage message) {
 				
