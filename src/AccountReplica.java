@@ -465,6 +465,7 @@ public class AccountReplica  implements BasicMessageListener {
 				case "state":
 					if(!initialized) {
 						balance = Double.parseDouble(data[1]);
+						initialized = true;
 					}
 					
 					//System.out.println(balance);
