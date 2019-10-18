@@ -27,6 +27,7 @@ public class AccountReplica  implements BasicMessageListener {
 	static String account_id;
 	ArrayList<Transaction> outstanding_collection; 
 	ArrayList<Transaction> executed_list;
+	String filename;
 	
 	int order_counter = 0;
 	int outstanding_counter = 0;
@@ -55,7 +56,8 @@ public class AccountReplica  implements BasicMessageListener {
 
 	
 		AccountReplica ar = new AccountReplica(args[1], args[0], Integer.parseInt(args[2]));
-		
+		if (args.length == 4) ar.filename = args[3];
+
 
 		account_id = Long.toString(System.nanoTime());
 		account_id = account_id.substring( account_id.length() / 2, account_id.length() - 1);
@@ -234,7 +236,7 @@ public class AccountReplica  implements BasicMessageListener {
 	 */
 	public void input_handler() throws FileNotFoundException {
 		next_broadcast = System.currentTimeMillis() + broadcast_delay;
-		String filename = null;
+		String filename = this.filename;
 		while(true) {
 			if(group_size < number_of_replicas) {
 				waitForOthers();
@@ -309,15 +311,22 @@ public class AccountReplica  implements BasicMessageListener {
 				Scanner scanner = new Scanner(file);
 				System.out.println("reading commands from file...");
 				while(scanner.hasNext()) {
-					String[] command = scanner.nextLine().split("\\s+");
+					if(next_broadcast <= System.currentTimeMillis()) {
+						System.out.println("its next_broadcast time ");
+						broadcast_outstanding();
+						next_broadcast = System.currentTimeMillis() + broadcast_delay;
+					}
+					String s = scanner.nextLine();
+					String[] command = s.split("\\s+");
 					switch(command[0]) {
 					case "getQuickBalance":
 						//TODO: complete this
 						getQuickBalance();
 						break;
-					case "getSyncedBalance":
+					case "getSynchedBalance":
+						getSynchedBalance();
 						break;
-					case "deposit:":
+					case "deposit":
 						deposit(Double.parseDouble(command[1]));
 						//TODO: complete this
 						break;					
@@ -352,10 +361,11 @@ public class AccountReplica  implements BasicMessageListener {
 						break;
 					case "exit":
 						exit();
-						break;			
+						break;
+					default:
+						System.out.println("No such command '" + s.toString() + "'");
 					}				
 				}		
-				
 			}
 		}	
 	}
