@@ -191,6 +191,19 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	public void waitForOthers() {
+		boolean weAreNumberOne = false;
+		if (group_size == 1) {
+			weAreNumberOne = true; //hey!
+			started = false;
+		}
+		
+		//startup;
+		
+		while(started == false) {
+			
+		}
+		
+		
 		int others = 1;
 		int i = 0;		
 		System.out.println("entering etheral hellscape");
