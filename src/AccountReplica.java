@@ -16,6 +16,8 @@ public class AccountReplica  implements BasicMessageListener {
 	String account_name, server_adress;
 	volatile int number_of_replicas = 0;
 	int group_size = 0;
+	long broadcast_delay = 10000;
+	long next_broadcast;
 	boolean started;
 	SpreadConnection connection;
 	SpreadGroup group;
@@ -94,8 +96,6 @@ public class AccountReplica  implements BasicMessageListener {
 		}
 		
 		ar.connection.add(ar);
-		
-		System.out.println("did it work?");
 		System.out.println(ar);
 		//ar.sendMessage();
 		ar.waitForOthers();	
@@ -106,7 +106,6 @@ public class AccountReplica  implements BasicMessageListener {
 			e1.printStackTrace();
 		}
 		
-		System.out.println("we have started");
 		
 		try {
 			Thread.sleep(5000);
@@ -127,12 +126,18 @@ public class AccountReplica  implements BasicMessageListener {
 	
 	public void getSynchedBalance() {
 		while(outstanding_collection.size()>0) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if(next_broadcast <= System.currentTimeMillis()) {
+				System.out.println("its next_broadcast time ");
+				broadcast_outstanding();
+				next_broadcast = System.currentTimeMillis() + broadcast_delay;
 			}
+		}
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		System.out.println(balance);
 	}
@@ -210,7 +215,6 @@ public class AccountReplica  implements BasicMessageListener {
 		
 		while (true) {
 			if(group_size >= number_of_replicas) {
-				System.out.println(group_size + number_of_replicas);
 				break;
 			}
 		}
@@ -238,14 +242,12 @@ public class AccountReplica  implements BasicMessageListener {
 			i++;
 			
 		}
-		System.out.println(data);
 		sendMessage(data);
 		
 	}
 	
 	public void input_handler() throws FileNotFoundException {
-		long broadcast_delay = 10000;
-		long next_broadcast = System.currentTimeMillis() + broadcast_delay;
+		next_broadcast = System.currentTimeMillis() + broadcast_delay;
 		String filename = null;
 		while(true) {
 			if(filename == null) {
@@ -278,11 +280,17 @@ public class AccountReplica  implements BasicMessageListener {
 					this.getHistory();
 					break;
 				case "checkTxStatus":
-					int transactionID = Integer.parseInt(command[1]);
+					
+					for(Transaction trans: executed_list) {
+						if(trans.unique_id.equalsIgnoreCase(command[1])) {
+							System.out.println("Transaction has been applied");
+						}
+					}
+					
 					//TODO: complete this.
 					break;
 				case "cleanHistory":
-					//TODO: complete this.
+					sendMessage("cleanHistory");
 					break;
 				case "memberInfo":
 					getMembers();
@@ -373,12 +381,11 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	public void handleDeposit(String command) {
-		System.out.println("uugug " + command);
+		//System.out.println("uugug " + command);
 		
 		String[] data = command.split("\\s+");
 		Transaction trans = new Transaction(data[0] + " " + data[1], data[2]);
 		if(outstanding_collection.contains(trans)) {
-			System.out.println("it does!!");
 			outstanding_collection.remove(trans);
 		}
 		
@@ -395,7 +402,7 @@ public class AccountReplica  implements BasicMessageListener {
 		String[] data = command.split("\\s+");
 		Transaction trans = new Transaction(data[0] + " " + data[1], data[2]);
 		if(outstanding_collection.contains(trans)) {
-			System.out.println("it does!!");
+			//System.out.println("it does!!");
 			outstanding_collection.remove(trans);
 		}
 		
@@ -410,10 +417,9 @@ public class AccountReplica  implements BasicMessageListener {
 	public void messageReceived(SpreadMessage message) {
 				
 		if (message.isRegular()) {
-			System.out.println("message recieved");
+			//System.out.println("message recieved");
 			System.out.println(new String (message.getData()));
 			String[] commands = new String(message.getData()).split("\\|");
-			//System.out.println(data[0] + " ugu");
 			
 			for(String s: commands) {
 				String[] data = s.split("\\s+");
@@ -426,7 +432,11 @@ public class AccountReplica  implements BasicMessageListener {
 					break;
 				case "interest":
 					handleInterest(s);
-					break;	
+					break;
+					
+				case "cleanHistory":
+					cleanHistory();
+					break;
 				default:
 					System.out.println("Unknown command of '" + new String (message.getData())  + "'");
 				}
