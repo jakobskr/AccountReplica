@@ -121,15 +121,18 @@ public class AccountReplica  implements BasicMessageListener {
 			}
 		}
 		
+		//the joys of threads
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(500);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println(balance);
 	}
 	
+	/*
+	 * adds a deposit command to the outstanding collection
+	 */
 	public void deposit(Double amount) {
 		Transaction t = new Transaction("deposit " + amount, account_id + "-" + outstanding_counter);
 		outstanding_collection.add(t);
@@ -137,6 +140,9 @@ public class AccountReplica  implements BasicMessageListener {
 		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
+	/*
+	 * adds a interest command to the outstanding collection
+	 */
 	public void addInterest(Double interest) {
 		Transaction t = new Transaction("interest " + interest, account_id + "-" + outstanding_counter);
 		outstanding_collection.add(t);
@@ -144,6 +150,9 @@ public class AccountReplica  implements BasicMessageListener {
 		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
+	/*
+	 * gets the applied and unapplied commands
+	 */
 	public void getHistory() {
 		int counter = order_counter - executed_list.size();
 		System.out.println("executed:");
@@ -157,11 +166,18 @@ public class AccountReplica  implements BasicMessageListener {
 		}
 	}
 	
+	
+	/*
+	 * Clears the oustanding and executed list, outstanding orders might be lost.
+	 */
 	public void cleanHistory() {
 		outstanding_collection = new ArrayList<Transaction>(); 
 		executed_list = new ArrayList<Transaction>();
 	}
 	
+	/*
+	 * Prints the members of our group
+	 */
 	public void getMembers() {
 		System.out.println("The members of " + account_name + ": " + group_size); 
 		
@@ -171,6 +187,10 @@ public class AccountReplica  implements BasicMessageListener {
 	}
 	
 	
+	/*
+	 * sends the content to all replicas in the group, including ourselves.
+	 * When this client receives this message we can applied it since the message has now been delivered and ordered to all other clients 
+	 */
 	public void sendMessage(String content) {
 		byte[] a = content.getBytes();
 		SpreadMessage message = new SpreadMessage();
@@ -185,6 +205,11 @@ public class AccountReplica  implements BasicMessageListener {
 		}
 	}
 	
+	
+	/*
+	 * Waits until there are enough people to start the program
+	 * 
+	 */
 	public void waitForOthers() {
 		boolean weAreNumberOne = false;
 		System.out.println("Waiting until " + number_of_replicas + " replicas has joined...");
