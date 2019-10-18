@@ -135,7 +135,7 @@ public class AccountReplica  implements BasicMessageListener {
 		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
-	public void getInterest(Double interest) {
+	public void addInterest(Double interest) {
 		Transaction t = new Transaction("interest " + interest, account_id + "-" + order_counter);
 		outstanding_collection.add(t);
 		order_counter++;
@@ -263,7 +263,7 @@ public class AccountReplica  implements BasicMessageListener {
 						break;					
 				case "addInterest":
 					double interest = Double.parseDouble(command[1]);
-					this.getInterest(interest);
+					this.addInterest(interest);
 					break;
 				case "getHistory":
 					this.getHistory();
@@ -313,7 +313,7 @@ public class AccountReplica  implements BasicMessageListener {
 					switch(command[0]) {
 					case "getQuickBalance":
 						//TODO: complete this
-						getQuickBalance(Double.parseDouble(command[1]));
+						getQuickBalance();
 						break;
 					case "getSyncedBalance":
 						break;
@@ -438,7 +438,7 @@ public class AccountReplica  implements BasicMessageListener {
 				
 		if (message.isRegular()) {
 			//System.out.println("message recieved");
-			System.out.println(new String (message.getData()));
+			System.out.println("received '" + new String (message.getData()) + "' from " + message.getSender());
 			String[] commands = new String(message.getData()).split("\\|");
 			
 			for(String s: commands) {
