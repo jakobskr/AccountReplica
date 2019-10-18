@@ -141,14 +141,14 @@ public class AccountReplica  implements BasicMessageListener {
 		Transaction t = new Transaction("deposit " + amount, account_id + "-" + order_counter);
 		outstanding_collection.add(t);
 		order_counter++;
-		sendMessage(t.command + " " + t.unique_id);
+		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
 	public void getInterest(int interest) {
 		Transaction t = new Transaction("interest " + interest, account_id + "-" + order_counter);
 		outstanding_collection.add(t);
 		order_counter++;
-		sendMessage(t.command + " " + t.unique_id);
+		//sendMessage(t.command + " " + t.unique_id);
 	}
 	
 	public void getHistory() {
@@ -190,7 +190,7 @@ public class AccountReplica  implements BasicMessageListener {
 		}
 	}
 	
-	public void  waitForOthers() {
+	public void waitForOthers() {
 		int others = 1;
 		int i = 0;		
 		System.out.println("entering etheral hellscape");
@@ -206,10 +206,41 @@ public class AccountReplica  implements BasicMessageListener {
 		return;
 	}
 	
+	public void broadcast_outstanding() {
+		if(outstanding_collection.size() == 0) {
+			return;
+		}
+		
+		String data = "";
+		int i = 0;
+		for (Transaction trans: outstanding_collection) {
+			data += trans;
+			
+			if(i == outstanding_collection.size() - 1) {
+				continue;
+			}
+			
+			data += "|";
+			
+			i++;
+			
+		}
+		System.out.println(data);
+		sendMessage(data);
+		
+	}
+	
 	public void input_handler() throws FileNotFoundException {
+		long broadcast_delay = 10000;
+		long next_broadcast = System.currentTimeMillis() + broadcast_delay;
 		String filename = null;
 		while(true) {
 			if(filename == null) {
+				if(next_broadcast <= System.currentTimeMillis()) {
+					System.out.println("its next_broadcast time ");
+					broadcast_outstanding();
+					next_broadcast = System.currentTimeMillis() + broadcast_delay;
+				}
 				//Commands are written directly to the command line.
 				Scanner scanner = new Scanner(System.in);
 				System.out.println("Waiting for command...");
@@ -245,6 +276,12 @@ public class AccountReplica  implements BasicMessageListener {
 					break;
 				case "sleep":
 					int sleepDuration = Integer.parseInt(command[1]);
+					try {
+						Thread.sleep(sleepDuration * 1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					break;
 				case "exit":
 					exit();
@@ -321,6 +358,40 @@ public class AccountReplica  implements BasicMessageListener {
 			e.printStackTrace();
 		}
 	}
+	
+	public void handleDeposit(String command) {
+		System.out.println("uugug " + command);
+		
+		String[] data = command.split("\\s+");
+		Transaction trans = new Transaction(data[0] + " " + data[1], data[2]);
+		if(outstanding_collection.contains(trans)) {
+			System.out.println("it does!!");
+			outstanding_collection.remove(trans);
+		}
+		
+		if(!executed_list.contains(trans)) {
+			executed_list.add(trans);
+			balance += Double.parseDouble(data[1]);
+			this.order_counter++;
+		}
+	}
+	
+	
+	public void handleInterest(String command) {
+		
+		String[] data = command.split("\\s+");
+		Transaction trans = new Transaction(data[0] + " " + data[1], data[2]);
+		if(outstanding_collection.contains(trans)) {
+			System.out.println("it does!!");
+			outstanding_collection.remove(trans);
+		}
+		
+		if(!executed_list.contains(trans)) {
+			executed_list.add(trans);
+			balance = balance * (1 + Double.parseDouble(data[1]) / 100);
+			this.order_counter++;
+		}
+	}
 
 	@Override
 	public void messageReceived(SpreadMessage message) {
@@ -328,20 +399,26 @@ public class AccountReplica  implements BasicMessageListener {
 		if (message.isRegular()) {
 			System.out.println("message recieved");
 			System.out.println(new String (message.getData()));
-			String[] data = new String(message.getData()).split("\\s+");
+			String[] commands = new String(message.getData()).split("\\|");
 			//System.out.println(data[0] + " ugu");
-			switch(data[0]) {
-			case "deposit":
-				balance += Double.parseDouble(data[1]);
-				//System.out.println(balance);
+			
+			for(String s: commands) {
+				String[] data = s.split("\\s+");
+				switch(data[0]) {
+				case "deposit":
+					handleDeposit(s);
+					
+					//System.out.println(balance);
 
-				break;
-			case "interest":
-				balance = balance * (1 + Double.parseDouble(data[1]) / 100);
-				break;	
-			default:
-				System.out.println("Unknown command of '" + new String (message.getData())  + "'");
+					break;
+				case "interest":
+					handleInterest(s);
+					break;	
+				default:
+					System.out.println("Unknown command of '" + new String (message.getData())  + "'");
+				}
 			}
+			
 			
 		}
 		
