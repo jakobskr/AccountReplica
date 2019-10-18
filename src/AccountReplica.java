@@ -19,6 +19,7 @@ public class AccountReplica  implements BasicMessageListener {
 	long broadcast_delay = 10000;
 	long next_broadcast;
 	boolean started;
+	boolean initialized = false;
 	SpreadConnection connection;
 	SpreadGroup group;
 	ArrayList<SpreadGroup> group_members = new ArrayList<SpreadGroup>();
@@ -68,6 +69,8 @@ public class AccountReplica  implements BasicMessageListener {
 			System.out.println("hey");
 			return;
 		}
+
+		
 		
 		AccountReplica ar = new AccountReplica(args[1], args[0], Integer.parseInt(args[2]));
 		
@@ -197,18 +200,20 @@ public class AccountReplica  implements BasicMessageListener {
 	
 	public void waitForOthers() {
 		boolean weAreNumberOne = false;
+		
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if (group_size == 1) {
+			System.out.println("we are number");
 			weAreNumberOne = true; //hey!
 			started = false;
+			initialized = true;
 		}
-		
-		//startup;
-		
-		while(started == false) {
-			
-		}
-		
-		
+
 		int others = 1;
 		int i = 0;		
 		System.out.println("entering etheral hellscape");
@@ -250,6 +255,9 @@ public class AccountReplica  implements BasicMessageListener {
 		next_broadcast = System.currentTimeMillis() + broadcast_delay;
 		String filename = null;
 		while(true) {
+			if(group_size < number_of_replicas) {
+				waitForOthers();
+			}
 			if(filename == null) {
 				if(next_broadcast <= System.currentTimeMillis()) {
 					System.out.println("its next_broadcast time ");
@@ -430,6 +438,14 @@ public class AccountReplica  implements BasicMessageListener {
 					//System.out.println(balance);
 
 					break;
+				case "state":
+					if(!initialized) {
+						balance = Double.parseDouble(data[1]);
+					}
+					
+					//System.out.println(balance);
+
+					break;
 				case "interest":
 					handleInterest(s);
 					break;
@@ -450,11 +466,17 @@ public class AccountReplica  implements BasicMessageListener {
 			
 			if (info.isCausedByJoin()) {
 				System.out.println(info.getJoined() + " joined the group");
+				if(initialized) {
+					System.out.println("sending my state");
+					sendMessage("state " + balance);					
+				}
+				
+				
 				group_members.add(info.getJoined());
 				group_size++;
 				
 				SpreadGroup[] temp = info.getMembers();
-
+				
 				if(group_size < temp.length) {
 					group_size = temp.length;
 					
