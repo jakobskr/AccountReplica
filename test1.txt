@@ -1,0 +1,14 @@
+deposit 100
+deposit 100
+addInterest 10
+getQuickBalance
+getSynchedBalance
+getHistory
+sleep 5
+deposit 50
+sleep 10
+deposit 100
+sleep 15
+addInterest 10
+getSynchedBalance
+exit
